@@ -52,16 +52,16 @@ char *trim(char *str) {
   return str;
 }
 
-Redirection parse_file(char *file, Redirection_Type redirection) {
-  Redirection redirection_struct;
+SequenceComponent parse_file(char *file, Redirection_Type redirection) {
+  SequenceComponent redirection_struct;
   redirection_struct.type = FILE_TYPE;
-  redirection_struct.pipeline_file.file.file = trim(file);
-  redirection_struct.pipeline_file.file.redirection = redirection;
+  redirection_struct.component.file.file = trim(file);
+  redirection_struct.component.file.redirection = redirection;
   return redirection_struct;
 }
 
 // Pipeline parse_file
-Redirection parse_redirection(char *pipeline, Redirection_Type redirection) {
+SequenceComponent parse_redirection(char *pipeline, Redirection_Type redirection) {
   Pipeline pipeline_struct;
   pipeline_struct.command.args_length = 0;
   pipeline_struct.command.args = NULL;
@@ -86,9 +86,9 @@ Redirection parse_redirection(char *pipeline, Redirection_Type redirection) {
     }
   }
 
-  Redirection redirection_struct;
+  SequenceComponent redirection_struct;
   redirection_struct.type = PIPELINE_TYPE;
-  redirection_struct.pipeline_file.pipeline = pipeline_struct;
+  redirection_struct.component.pipeline = pipeline_struct;
   return redirection_struct;
 }
 
@@ -98,17 +98,17 @@ Sequence parse_sequence(char *sequence) {
                         // least somewhere
   Sequence sequence_struct;
   sequence_struct.redirection_length = 0;
-  sequence_struct.redirection = NULL;
+  sequence_struct.component = NULL;
   char *separators = "><|";
   char *pipeline;
   char *rest = sequence;
   Redirection_Type redirection = NONE_REDIRECTION;
   while ((pipeline = strtok_r(rest, separators, &rest)) != NULL) {
     sequence_struct.redirection_length++;
-    sequence_struct.redirection = (Redirection *)realloc(
-        sequence_struct.redirection,
-        sequence_struct.redirection_length * sizeof(Redirection));
-    if (sequence_struct.redirection == NULL) {
+    sequence_struct.component = (SequenceComponent *)realloc(
+        sequence_struct.component,
+        sequence_struct.redirection_length * sizeof(SequenceComponent));
+    if (sequence_struct.component == NULL) {
       slog_error("Failed to allocate memory for pipeline. Closing program...");
       exit(EXIT_FAILURE);
     }
@@ -118,16 +118,16 @@ Sequence parse_sequence(char *sequence) {
                                              // have only one pipeline
       redirection = get_redirection(
           sequence_copy[rest - sequence - 1]); // NOTE: Can UB happen here?
-      sequence_struct.redirection[sequence_struct.redirection_length - 1] =
+      sequence_struct.component[sequence_struct.redirection_length - 1] =
           parse_file(pipeline, redirection);
       break;
     }
     redirection = get_redirection(
         sequence_copy[rest - sequence - 1]); // NOTE: Can UB happen here?
-    Redirection redirection_struct = {0};
+    SequenceComponent redirection_struct = {0};
     redirection_struct.type =  PIPELINE_TYPE;
     redirection_struct = parse_redirection(pipeline, redirection);
-    sequence_struct.redirection[sequence_struct.redirection_length - 1] =
+    sequence_struct.component[sequence_struct.redirection_length - 1] =
         redirection_struct;
   }
   return sequence_struct;

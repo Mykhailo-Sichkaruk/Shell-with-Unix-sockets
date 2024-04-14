@@ -5,10 +5,10 @@
 #include <stddef.h> // For size_t
 
 typedef enum {
-  NONE_REDIRECTION,
-  INPUT_REDIRECTION,
-  OUTPUT_REDIRECTION,
-  PIPE_REDIRECTION,
+  NONE_REDIRECTION = 0,
+  INPUT_REDIRECTION = '<',
+  OUTPUT_REDIRECTION = '>',
+  PIPE_REDIRECTION = '|',
 } Redirection_Type;
 
 typedef enum {
@@ -37,13 +37,13 @@ typedef union Pipeline_File {
   Pipeline pipeline;
 } Pipeline_File;
 
-typedef struct Redirection {
+typedef struct SequenceComponentStruct {
   PIPELINE_FILE_TYPE type;
-  Pipeline_File pipeline_file;
-} Redirection;
+  Pipeline_File component;
+} SequenceComponent;
 
-typedef struct Sequence { // An array of pipelines
-  Redirection *redirection;
+typedef struct Sequence { // An array of terms
+  SequenceComponent *component;
   size_t redirection_length;
 } Sequence;
 
@@ -61,8 +61,8 @@ typedef struct Parser {
 char *remove_comments(char *str);
 Redirection_Type get_redirection(char redirection);
 char *trim(char *str);
-Redirection parse_file(char *file, Redirection_Type redirection);
-Redirection parse_redirection(char *pipeline, Redirection_Type redirection);
+SequenceComponent parse_file(char *file, Redirection_Type redirection);
+SequenceComponent parse_redirection(char *pipeline, Redirection_Type redirection);
 Sequence parse_sequence(char *sequence);
 Line parse_line(char *line);
 Parser parse(char *input);

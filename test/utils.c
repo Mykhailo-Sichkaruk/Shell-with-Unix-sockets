@@ -32,15 +32,15 @@ void print_command(Command command) {
   printf("\n");
 }
 
-void print_redirection(Redirection redirection) {
+void print_redirection(SequenceComponent redirection) {
   switch (redirection.type) {
   case FILE_TYPE:
     printf("Redirection: FILE_TYPE\n");
-    print_file(redirection.pipeline_file.file);
+    print_file(redirection.component.file);
     break;
   case PIPELINE_TYPE:
     printf("Redirection: PIPELINE_TYPE\n");
-    print_command(redirection.pipeline_file.pipeline.command);
+    print_command(redirection.component.pipeline.command);
     break;
   }
 }
@@ -49,7 +49,7 @@ void print_sequence(Sequence sequence) {
   printf("Sequence with %zu redirection(s):\n", sequence.redirection_length);
   for (size_t i = 0; i < sequence.redirection_length; ++i) {
     printf("Redirection %zu:\n", i + 1);
-    print_redirection(sequence.redirection[i]);
+    print_redirection(sequence.component[i]);
   }
 }
 
