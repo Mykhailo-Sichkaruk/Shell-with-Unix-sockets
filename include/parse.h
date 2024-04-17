@@ -1,6 +1,7 @@
 #ifndef PARSE_H
 #define PARSE_H
 
+#include <stdint.h>
 #include <stddef.h> // For size_t
 
 typedef enum {

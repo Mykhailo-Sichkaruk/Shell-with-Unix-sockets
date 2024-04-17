@@ -12,6 +12,7 @@
 // NOTE: Consider null=terminated strings
 #include "parse.h"
 #include <slog.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,9 +24,8 @@
  */
 char *remove_comments(char *str) {
   char *comment = strchr(str, '#');
-  if (comment) {
+  if (comment)
     *comment = '\0';
-  }
   return str;
 }
 
@@ -43,12 +43,10 @@ Redirection_Type get_redirection(char redirection) {
 }
 
 char *trim(char *str) {
-  while (*str == ' ') {
+  while (*str == ' ')
     str++;
-  }
-  while (str[strlen(str) - 1] == ' ') {
+  while (str[strlen(str) - 1] == ' ')
     str[strlen(str) - 1] = '\0';
-  }
   return str;
 }
 
@@ -61,7 +59,8 @@ SequenceComponent parse_file(char *file, Redirection_Type redirection) {
 }
 
 // Pipeline parse_file
-SequenceComponent parse_redirection(char *pipeline, Redirection_Type redirection) {
+SequenceComponent parse_redirection(char *pipeline,
+                                    Redirection_Type redirection) {
   Pipeline pipeline_struct;
   pipeline_struct.command.args_length = 0;
   pipeline_struct.command.args = NULL;
@@ -69,9 +68,11 @@ SequenceComponent parse_redirection(char *pipeline, Redirection_Type redirection
   char *separators = " ";
   char *token;
   char *rest = pipeline;
+  bool is_executable = false;
   while ((token = strtok_r(rest, separators, &rest)) != NULL) {
-    if (pipeline_struct.command.args_length == 0) {
+    if (is_executable == false) {
       pipeline_struct.command.executable = token;
+      is_executable = true;
     } else {
       pipeline_struct.command.args_length++;
       pipeline_struct.command.args = (char **)realloc(
@@ -99,6 +100,7 @@ Sequence parse_sequence(char *sequence) {
   Sequence sequence_struct;
   sequence_struct.redirection_length = 0;
   sequence_struct.component = NULL;
+  sequence_struct.str = sequence;
   char *separators = "><|";
   char *pipeline;
   char *rest = sequence;
@@ -120,12 +122,12 @@ Sequence parse_sequence(char *sequence) {
           sequence_copy[rest - sequence - 1]); // NOTE: Can UB happen here?
       sequence_struct.component[sequence_struct.redirection_length - 1] =
           parse_file(pipeline, redirection);
-      break;
+      continue;
     }
     redirection = get_redirection(
         sequence_copy[rest - sequence - 1]); // NOTE: Can UB happen here?
     SequenceComponent redirection_struct = {0};
-    redirection_struct.type =  PIPELINE_TYPE;
+    redirection_struct.type = PIPELINE_TYPE;
     redirection_struct = parse_redirection(pipeline, redirection);
     sequence_struct.component[sequence_struct.redirection_length - 1] =
         redirection_struct;
@@ -142,10 +144,12 @@ Line parse_line(char *line) {
   Line line_struct;
   line_struct.sequence_length = 0;
   line_struct.sequence = NULL;
+  line_struct.str = line;
   char *separators = ";";
   char *sequence;
   char *rest = line;
   while ((sequence = strtok_r(rest, separators, &rest)) != NULL) {
+    slog_debug("Parsing sequence %s", sequence);
     line_struct.sequence_length++;
     line_struct.sequence = (Sequence *)realloc(
         line_struct.sequence, line_struct.sequence_length * sizeof(Sequence));
@@ -163,11 +167,13 @@ Parser parse(char *input) {
   Parser parser;
   parser.lines_length = 0;
   parser.lines = NULL;
+  parser.str = input;
   char *separators = "\n";
   char *line;
   char *rest = input;
   while ((line = strtok_r(rest, separators, &rest)) != NULL) {
     parser.lines_length++;
+    slog_debug("Parsing line %s", line);
     parser.lines =
         (Line *)realloc(parser.lines, parser.lines_length * sizeof(Line));
     if (parser.lines == NULL) {
