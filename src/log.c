@@ -20,5 +20,6 @@ void init_logger(char *log_file) {
   cfg.nToFile = 1;
   cfg.nKeepOpen = 1;
   slog_config_set(&cfg);
-  slog_info("Logger initialized");
+  slog_info("Logger initialized. Lof file: %s", log_path);
+  free(log_path);
 }

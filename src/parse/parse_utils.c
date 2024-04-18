@@ -1,5 +1,7 @@
 #include "parse_utils.h"
 #include <stdio.h>
+#include <malloc.h>
+#include <slog.h>
 
 void print_file(FileRedirection fileRedirection) {
   const char *redirectionType = "";
@@ -18,46 +20,86 @@ void print_file(FileRedirection fileRedirection) {
     redirectionType = "No Redirection";
     break;
   }
-  printf("File: %s, Redirection: %s\n", fileRedirection.file, redirectionType);
+  slog("File: %s, Redirection: %s", fileRedirection.file, redirectionType);
 }
 
 void print_command(Command command) {
-  printf("Executable: %s\n", command.executable);
-  printf("Args (%zu): ", command.args_length);
+  slog("Executable: %s", command.executable);
+  slog("Args (%zu): ", command.args_length);
   for (size_t i = 0; i < command.args_length; ++i) {
-    printf("\"%s\"", command.args[i]);
-    if (i < command.args_length - 1)
-      printf(", ");
+    slog("\"%s\"", command.args[i]);
   }
-  printf("\n");
+  slog("");
 }
 
 void print_component(SequenceComponent redirection) {
   switch (redirection.type) {
   case FILE_TYPE:
-    printf("Redirection: FILE_TYPE\n");
+    slog("Redirection: FILE_TYPE");
     print_file(redirection.component.file);
     break;
   case PIPELINE_TYPE:
-    printf("Redirection: PIPELINE_TYPE\n");
+    slog("Redirection: PIPELINE_TYPE");
     print_command(redirection.component.pipeline.command);
     break;
   }
 }
 
 void print_sequence(Sequence sequence) {
-  printf("Sequence with %zu redirection(s):\n", sequence.redirection_length);
-  printf("Sequence: %s\n", sequence.str);
+  slog("Sequence with %zu redirection(s):", sequence.redirection_length);
+  slog("Sequence: %s", sequence.str);
   for (size_t i = 0; i < sequence.redirection_length; ++i) {
-    printf("Redirection %zu:\n", i + 1);
+    slog("Redirection %zu:", i + 1);
     print_component(sequence.component[i]);
   }
 }
 
 void print_line(Line line) {
-  printf("Line with %zu sequence(s):\n", line.sequence_length);
+  slog("Line with %zu sequence(s):", line.sequence_length);
   for (size_t i = 0; i < line.sequence_length; ++i) {
-    printf("Sequence %zu:\n", i + 1);
+    slog("Sequence %zu:", i + 1);
     print_sequence(line.sequence[i]);
   }
+}
+
+void free_command(Command *cmd) {
+    if (cmd->args) {
+        free(cmd->args);  // Assuming args were allocated as a single block
+    }
+}
+
+void free_sequence_component(SequenceComponent *component) {
+    if (component->type == PIPELINE_TYPE) {
+        free_command(&component->component.pipeline.command);
+    } else if (component->type == FILE_TYPE) {
+        // If FileRedirection.file is dynamically allocated, free it here
+        free(component->component.file.file);
+    }
+}
+
+void free_sequence(Sequence *sequence) {
+    if (sequence->component) {
+        for (size_t i = 0; i < sequence->redirection_length; ++i) {
+            free_sequence_component(&sequence->component[i]);
+        }
+        free(sequence->component);
+    }
+}
+
+void free_line(Line *line) {
+    if (line->sequence) {
+        for (size_t i = 0; i < line->sequence_length; ++i) {
+            free_sequence(&line->sequence[i]);
+        }
+        free(line->sequence);
+    }
+}
+
+void free_parser(Parser *parser) {
+    if (parser->lines) {
+        for (size_t i = 0; i < parser->lines_length; ++i) {
+            free_line(&parser->lines[i]);
+        }
+        free(parser->lines);
+    }
 }

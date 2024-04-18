@@ -132,6 +132,7 @@ Sequence parse_sequence(char *sequence) {
     sequence_struct.component[sequence_struct.redirection_length - 1] =
         redirection_struct;
   }
+  free((char *)sequence_copy);
   return sequence_struct;
 }
 
