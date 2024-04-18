@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef PARSE_UTILS_H
+#define PARSE_UTILS_H
 
 #include "parse.h"
 
@@ -9,4 +9,4 @@ void print_component(SequenceComponent redirection);
 void print_sequence(Sequence sequence);
 void print_line(Line line);
 
-#endif // UTILS_H
+#endif // PARSE_UTILS_H

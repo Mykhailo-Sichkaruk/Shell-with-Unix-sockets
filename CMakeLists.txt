@@ -23,12 +23,20 @@ set(RELEASE_OPTIONS
   -O3
 )
 
-# executor tests
-add_executable(executor_tests 
-./test/executor.c
-./src/shell/executor.c
+set(SANITIZER_OPTIONS
+  -fsanitize=address
+  -fsanitize=undefined
+  -fno-omit-frame-pointer
+  -g
 )
-target_compile_options(executor_tests PRIVATE ${DEBUG_OPTIONS})
+
+# Executor tests
+add_executable(executor_tests 
+  ./test/executor.c
+  ./src/shell/executor.c
+)
+target_compile_options(executor_tests PRIVATE ${DEBUG_OPTIONS} ${SANITIZER_OPTIONS})
+target_link_options(executor_tests PRIVATE ${SANITIZER_OPTIONS})
 target_link_libraries(executor_tests PRIVATE slog pthread)
 add_custom_target(executor_test
     COMMAND ./executor_tests
@@ -36,14 +44,13 @@ add_custom_target(executor_test
     COMMENT "Running the executor tests..."
 )
 
-
-# executor + parser tests
+# Executor + parser tests
 add_executable(exec_parse_tests 
-# ./test/exec_parse.c
-./src/shell/executor.c
-./src/parse/parse.c
+  ./src/shell/executor.c
+  ./src/parse/parse.c
 )
-target_compile_options(exec_parse_tests PRIVATE ${DEBUG_OPTIONS})
+target_compile_options(exec_parse_tests PRIVATE ${DEBUG_OPTIONS} ${SANITIZER_OPTIONS})
+target_link_options(exec_parse_tests PRIVATE ${SANITIZER_OPTIONS})
 target_link_libraries(exec_parse_tests PRIVATE slog pthread)
 add_custom_target(exec_parse_test
     COMMAND ./exec_parse_tests
@@ -51,45 +58,46 @@ add_custom_target(exec_parse_test
     COMMENT "Running the executor and parse tests..."
 )
 
-# Add a library target for the parser
-add_library(parse_lib SHARED
-    ./src/parse/parse.c
-)
+# Include directories
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
-target_include_directories(parse_lib PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
+# Source files
+set(PARSE_SRC
+  ./src/parse/parse.c
+  ./src/parse/parse_utils.c
 )
+# Debug library with sanitizers
+add_library(parse_lib_debug SHARED ${PARSE_SRC})
+target_compile_options(parse_lib_debug PRIVATE ${DEBUG_OPTIONS} ${SANITIZER_OPTIONS})
+target_link_options(parse_lib_debug PRIVATE ${SANITIZER_OPTIONS})
 
-# Set properties for the library
-set_target_properties(parse_lib PROPERTIES
-    VERSION ${PROJECT_VERSION}
-    SOVERSION 1
-    PUBLIC_HEADER include/parse.h
-)
+# Release library without sanitizers
+add_library(parse_lib_release SHARED ${PARSE_SRC})
+target_compile_options(parse_lib_release PRIVATE ${RELEASE_OPTIONS})
 
+# Main executable
 add_executable(chell 
-./src/main.c
-./src/shell/executor.c
-./src/shell/utils.c
+  ./src/main.c
+  ./src/shell/executor.c
+  ./src/shell/utils.c
 )
 target_compile_options(chell PRIVATE ${RELEASE_OPTIONS})
-target_link_libraries(chell PRIVATE slog pthread parse_lib)  # Link the parse library here
+target_link_libraries(chell PRIVATE slog pthread parse_lib_release)
 add_custom_target(release
     COMMAND ./chell
     DEPENDS chell
     COMMENT "Running the ShellProject in release mode..."
 )
 
-install(TARGETS parse_lib
-    LIBRARY DESTINATION lib
-    PUBLIC_HEADER DESTINATION include
+# Parser tests
+add_executable(parser_tests 
+  ./test/parse/parse.c
 )
-
-add_executable(parser_tests ./src/parse/test/parse.c)
-target_compile_options(parser_tests PRIVATE ${RELEASE_OPTIONS})
-target_link_libraries(parser_tests PRIVATE slog pthread parse_lib)  # Link the parse library here
+target_compile_options(parser_tests PRIVATE ${RELEASE_OPTIONS} ${SANITIZER_OPTIONS})
+target_link_options(parser_tests PRIVATE ${SANITIZER_OPTIONS})
+target_link_libraries(parser_tests PRIVATE slog pthread parse_lib_debug)
 add_custom_target(parser_test
     COMMAND ./parser_tests
     DEPENDS parser_tests
-    COMMENT "Running the ShellProject in release mode..."
+    COMMENT "Running Parser Tests..."
 )

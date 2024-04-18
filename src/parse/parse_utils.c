@@ -1,4 +1,4 @@
-#include "../src/parse/parse.h"
+#include "parse_utils.h"
 #include <stdio.h>
 
 void print_file(FileRedirection fileRedirection) {
@@ -32,7 +32,7 @@ void print_command(Command command) {
   printf("\n");
 }
 
-void print_redirection(SequenceComponent redirection) {
+void print_component(SequenceComponent redirection) {
   switch (redirection.type) {
   case FILE_TYPE:
     printf("Redirection: FILE_TYPE\n");
@@ -47,9 +47,10 @@ void print_redirection(SequenceComponent redirection) {
 
 void print_sequence(Sequence sequence) {
   printf("Sequence with %zu redirection(s):\n", sequence.redirection_length);
+  printf("Sequence: %s\n", sequence.str);
   for (size_t i = 0; i < sequence.redirection_length; ++i) {
     printf("Redirection %zu:\n", i + 1);
-    print_redirection(sequence.component[i]);
+    print_component(sequence.component[i]);
   }
 }
 

@@ -1,10 +1,21 @@
-#include "../src/log.c"
-#include "../src/parse/parse.h"
-#include "utils.c"
+#include <parse.h>
+#include "log.c"
 #include <assert.h>
+#include <stdio.h>
+
+void test_parse_sequence_simple(){
+  char sequence[] = "echo Hello, world!";
+  Sequence result = parse_sequence(sequence);
+  print_sequence(result);
+  assert(result.redirection_length == 1);
+  assert(result.component[0].type == PIPELINE_TYPE);
+  assert(strcmp(result.component[0].component.pipeline.command.executable, "echo") == 0);
+
+  printf("test_parse_sequence_simple passed.\n");
+}
 
 void test_parse_sequence() {
-  char *sequence = "cmd1 arg1 > output.txt";
+  char sequence[] = "cmd1 arg1 > output.txt";
 
   Sequence result = parse_sequence(sequence);
   print_sequence(result);
@@ -48,6 +59,7 @@ void test_parse() {
 
 int main() {
   init_logger("test_log");
+  test_parse_sequence_simple();
   test_parse_sequence();
   test_parse_line();
   test_parse();
