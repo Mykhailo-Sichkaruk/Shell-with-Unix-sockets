@@ -30,34 +30,6 @@ set(SANITIZER_OPTIONS
   -g
 )
 
-# Executor tests
-add_executable(executor_tests 
-  ./test/executor.c
-  ./src/shell/executor.c
-)
-target_compile_options(executor_tests PRIVATE ${DEBUG_OPTIONS} ${SANITIZER_OPTIONS})
-target_link_options(executor_tests PRIVATE ${SANITIZER_OPTIONS})
-target_link_libraries(executor_tests PRIVATE slog pthread)
-add_custom_target(executor_test
-    COMMAND ./executor_tests
-    DEPENDS executor_tests
-    COMMENT "Running the executor tests..."
-)
-
-# Executor + parser tests
-add_executable(exec_parse_tests 
-  ./src/shell/executor.c
-  ./src/parse/parse.c
-)
-target_compile_options(exec_parse_tests PRIVATE ${DEBUG_OPTIONS} ${SANITIZER_OPTIONS})
-target_link_options(exec_parse_tests PRIVATE ${SANITIZER_OPTIONS})
-target_link_libraries(exec_parse_tests PRIVATE slog pthread)
-add_custom_target(exec_parse_test
-    COMMAND ./exec_parse_tests
-    DEPENDS exec_parse_tests
-    COMMENT "Running the executor and parse tests..."
-)
-
 # Include directories
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -75,23 +47,32 @@ target_link_options(parse_lib_debug PRIVATE ${SANITIZER_OPTIONS})
 add_library(parse_lib_release SHARED ${PARSE_SRC})
 target_compile_options(parse_lib_release PRIVATE ${RELEASE_OPTIONS})
 
+# Source files
+set(EXECUTOR_SRC
+  ./src/exec/executor.c
+  ./src/exec/executor_utils.c
+)
+# Debug library with sanitizers
+add_library(executor_lib_debug SHARED ${EXECUTOR_SRC})
+target_compile_options(executor_lib_debug PRIVATE ${DEBUG_OPTIONS} ${SANITIZER_OPTIONS})
+target_link_options(executor_lib_debug PRIVATE ${SANITIZER_OPTIONS})
+# Release library without sanitizers
+add_library(executor_lib_release SHARED ${EXECUTOR_SRC})
+target_compile_options(parse_lib_release PRIVATE ${RELEASE_OPTIONS})
+
 # Main executable
-add_executable(chell 
-  ./src/main.c
-  ./src/shell/executor.c
-  ./src/shell/utils.c
-)
+add_executable(chell ./src/main.c)
 target_compile_options(chell PRIVATE ${RELEASE_OPTIONS})
-target_link_libraries(chell PRIVATE slog pthread parse_lib_release)
-add_custom_target(release
-    COMMAND ./chell
-    DEPENDS chell
-    COMMENT "Running the ShellProject in release mode..."
-)
+target_link_libraries(chell PRIVATE slog pthread parse_lib_release executor_lib_release)
+# Debug executable
+add_executable(chell_debug ./src/main.c)
+target_compile_options(chell_debug PRIVATE ${DEBUG_OPTIONS} ${SANITIZER_OPTIONS})
+target_link_options(chell_debug PRIVATE ${SANITIZER_OPTIONS})
+target_link_libraries(chell_debug PRIVATE slog pthread parse_lib_debug executor_lib_debug)
 
 # Parser tests
 add_executable(parser_tests 
-  ./test/parse/parse.c
+  ./test/parse.c
 )
 target_compile_options(parser_tests PRIVATE ${RELEASE_OPTIONS} ${SANITIZER_OPTIONS})
 target_link_options(parser_tests PRIVATE ${SANITIZER_OPTIONS})
@@ -100,4 +81,17 @@ add_custom_target(parser_test
     COMMAND ./parser_tests
     DEPENDS parser_tests
     COMMENT "Running Parser Tests..."
+)
+
+# Executor tests
+add_executable(executor_tests 
+  ./test/executor.c
+)
+target_compile_options(executor_tests PRIVATE ${RELEASE_OPTIONS} ${SANITIZER_OPTIONS})
+target_link_options(executor_tests PRIVATE ${SANITIZER_OPTIONS})
+target_link_libraries(executor_tests PRIVATE slog pthread parse_lib_debug executor_lib_debug)
+add_custom_target(executor_test
+    COMMAND ./executor_tests
+    DEPENDS executor_tests
+    COMMENT "Running Executor Tests..."
 )

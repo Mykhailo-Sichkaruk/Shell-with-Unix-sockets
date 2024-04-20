@@ -1,7 +1,6 @@
 #include "../src/log.c"
 #include <assert.h>
 #include <parse.h>
-#include <stdio.h>
 
 void test_parse_sequence_simple() {
   char sequence[] = "echo Hello, world!";
@@ -12,7 +11,7 @@ void test_parse_sequence_simple() {
   assert(strcmp(result.component[0].component.pipeline.command.executable,
                 "echo") == 0);
   free_sequence(&result);
-  printf("test_parse_sequence_simple passed.\n");
+  slog("test_parse_sequence_simple passed.");
 }
 
 void test_parse_sequence() {
@@ -27,7 +26,7 @@ void test_parse_sequence() {
   assert(strcmp(result.component[1].component.file.file, "output.txt") == 0);
   free_sequence(&result);
 
-  printf("test_parse_sequence passed.\n");
+  slog("test_parse_sequence passed.");
 }
 
 void test_parse_line() {
@@ -41,11 +40,11 @@ void test_parse_line() {
   assert(strcmp(result.sequence[1].component[1].component.file.file,
                 "output.txt") == 0);
 
-  printf("test_parse_line passed.\n");
+  slog("test_parse_line passed.");
 }
 
 void test_parse() {
-  char input[] = "cmd1 arg1\n cmd2 arg2 > output.txt";
+  char input[] = "cmd1 arg1 cmd2 arg2 > output.txt";
 
   Parser result = parse(input);
 
@@ -56,7 +55,7 @@ void test_parse() {
   assert(strcmp(result.lines[1].sequence[0].component[1].component.file.file,
                 "output.txt") == 0);
 
-  printf("test_parse passed.\n");
+  slog("test_parse passed.");
 }
 
 int main() {

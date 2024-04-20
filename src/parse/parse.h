@@ -4,7 +4,7 @@
 #include <stddef.h> // For size_t
 
 typedef enum {
-  NONE_REDIRECTION = 0,
+  NONE_REDIRECTION = '\0', // NOTE: DO NOT CHANGE
   INPUT_REDIRECTION = '<',
   OUTPUT_REDIRECTION = '>',
   PIPE_REDIRECTION = '|',
