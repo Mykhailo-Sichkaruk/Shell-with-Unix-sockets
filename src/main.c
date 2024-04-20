@@ -5,12 +5,11 @@
 #include "types.h"
 #include <slog.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
-  init_logger();
+  init_logger("release");
   options options = {UNINITIALIZED_CHELL_MODE,
                      {UNINITIALIZED_SERVER_OPTIONS, .port = 0}};
   int opt;
@@ -33,11 +32,11 @@ int main(int argc, char *argv[]) {
   }
 
   if (options.mode == CLIENT_MODE) {
-    client();
+    client(DEFAULT_HOST, DEFAULT_PORT); // Default connection settings
   } else if (options.mode == SERVER_MODE) {
     server(options.server);
   } else {
-    fprintf(stderr, "You must specify a mode - either SERVER or CLIENT.\n");
+    slog_warn("You must specify a mode - either SERVER or CLIENT. Exiting...");
     help();
     exit(EXIT_FAILURE);
   }
